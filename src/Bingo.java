@@ -10,17 +10,43 @@ public class Bingo
     public Bingo()
     {
         someBoards = new ArrayList<>();
-        
+
     }
 
     public void createBoards(File boardFile) throws FileNotFoundException
     {
         Scanner boardScanner = new Scanner(boardFile);
+        boolean createNew = false;
+        Board currentBoard = new Board(5, 5);
+        int row = 0, column = 0;
 
         while (boardScanner.hasNext())
         {
+            //TODO Parse each board data file individually
             String aLine = boardScanner.nextLine();
-            String mew = "";
+
+            Scanner scanLine = new Scanner(aLine);
+            while (scanLine.hasNext())
+            {
+                int currentValue = scanLine.nextInt();
+                //currentBoard.
+                currentBoard.insertPiece(row, column, currentValue);
+                column += 1;
+            }
+
+            if (aLine.equals("") || row == 4)
+            {
+                someBoards.add(currentBoard);
+                currentBoard = new Board(5, 5);
+                row = 0;
+            }
+            else
+            {
+                row += 1;
+            }
+            column = 0;
+
+            //String mew = "";
         }
 
     }
@@ -45,7 +71,7 @@ class BingoTesters
     public static void main(String[] sdasdasd) throws FileNotFoundException
     {
         Bingo thatsABingo = new Bingo();
-        thatsABingo.createBoards(new File("bingo_boards"));
+        thatsABingo.createBoards(new File("bingo_small.txt"));
         //thatsABingo.parseBingoNumbers(new File("bingo_numbers.txt"));
 
     }
@@ -70,7 +96,7 @@ class Board
         this.columnsChosen = new HashMap<>();
         createHashMaps(this.rows, this.columns);
         piecesArray = new Piece[this.rows * this.columns];
-        Arrays.sort(piecesArray);
+        //Arrays.sort(piecesArray);
         //Arrays.binarySearch(piecesArray, )
     }
 
