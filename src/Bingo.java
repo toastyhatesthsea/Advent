@@ -2,7 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 
-public class Bingo
+public class Bingo implements Iterable
 {
 
     ArrayList<Board> someBoards;
@@ -17,7 +17,8 @@ public class Bingo
     {
         Scanner boardScanner = new Scanner(boardFile);
         boolean createNew = false;
-        Board currentBoard = new Board(5, 5);
+        int currentBoardId = 0;
+        Board currentBoard = new Board(5, 5, currentBoardId);
         int row = 0, column = 0;
 
         while (boardScanner.hasNext())
@@ -25,45 +26,91 @@ public class Bingo
             //TODO Parse each board data file individually
             String aLine = boardScanner.nextLine();
 
-            Scanner scanLine = new Scanner(aLine);
-            while (scanLine.hasNext())
+            if (!aLine.equals(""))
             {
-                int currentValue = scanLine.nextInt();
-                //currentBoard.
-                currentBoard.insertPiece(row, column, currentValue);
-                column += 1;
-            }
+                Scanner scanLine = new Scanner(aLine);
+                while (scanLine.hasNext())
+                {
+                    int currentValue = scanLine.nextInt();
+                    //currentBoard.
+                    currentBoard.insertPiece(row, column, currentValue);
+                    column += 1;
+                }
 
-            if (aLine.equals("") || row == 4)
-            {
-                someBoards.add(currentBoard);
-                currentBoard = new Board(5, 5);
-                row = 0;
+                if (row == 4)
+                {
+                    someBoards.add(currentBoard);
+                    Arrays.sort(currentBoard.piecesArray);
+                    currentBoardId++;
+                    currentBoard = new Board(5, 5, currentBoardId);
+                    row = 0;
+                } else
+                {
+                    row += 1;
+                }
+                column = 0;
             }
-            else
-            {
-                row += 1;
-            }
-            column = 0;
 
             //String mew = "";
         }
 
     }
 
-    public void parseBingoNumbers(File numbersFile) throws FileNotFoundException
+    public int parseBingoNumbers(File numbersFile) throws FileNotFoundException
     {
+        if (someBoards.size() == 0)
+        {
+            throw new IllegalArgumentException("Must create boards to parse through Bingo numbers first");
+        }
         Scanner boardScanner = new Scanner(numbersFile);
         boardScanner.useDelimiter(",");
 
         while (boardScanner.hasNext())
         {
-            String aLine = boardScanner.next();
+            String aValue = boardScanner.next();
+            //int aBingoValue = boardScanner.nextInt();
+            int aBingoValue = Integer.parseInt(aValue);
+            Iterator<Board> boardIterator = iterator();
+            boolean foundPiece = false;
+
+            while (boardIterator.hasNext())
+            {
+                Board aBoard = boardIterator.next();
+                aBoard.selectPiece(aBingoValue);
+                if (aBoard.hasBingo)
+                {
+                    return aBoard.id;
+                }
+            }
+
             String mew = "";
         }
-
+        return -1;
     }
 
+    @Override
+    public Iterator iterator()
+    {
+        final int[] current = {0};
+        Iterator<Board> someIterator = new Iterator<Board>()
+        {
+            @Override
+            public boolean hasNext()
+            {
+                return current[0] < someBoards.size();
+                //return someBoards.get(current[0]) != null;
+            }
+
+            @Override
+            public Board next()
+            {
+                Board aBoard = someBoards.get(current[0]);
+                current[0]++;
+                return aBoard;
+            }
+        };
+        return someIterator;
+    }
 }
 
 class BingoTesters
@@ -71,7 +118,14 @@ class BingoTesters
     public static void main(String[] sdasdasd) throws FileNotFoundException
     {
         Bingo thatsABingo = new Bingo();
-        thatsABingo.createBoards(new File("bingo_small.txt"));
+        //thatsABingo.createBoards(new File("bingo_small.txt"));
+        thatsABingo.createBoards(new File("bingo_boards"));
+
+        int result = thatsABingo.parseBingoNumbers(new File("bingo_numbers.txt"));
+        Board aBoard = thatsABingo.someBoards.get(0);
+        //Piece somePiece = new Piece(0, 0, 1);
+        //int result = Arrays.binarySearch(aBoard.piecesArray, somePiece);
+        //int temp = 0;
         //thatsABingo.parseBingoNumbers(new File("bingo_numbers.txt"));
 
     }
@@ -80,14 +134,18 @@ class BingoTesters
 
 class Board
 {
+    //TODO Create function calculate all un-chosen values in board
+    int id;
     Piece[][] aBoard;
     Piece[] piecesArray;
+    boolean hasBingo;
     int rows;
     int columns;
+    int size;
     HashMap<String, Integer> rowsChosen; //Used for determining how many slots in each row is chosen
     HashMap<String, Integer> columnsChosen;
 
-    public Board(int aRows, int aColumns)
+    public Board(int aRows, int aColumns, int anId)
     {
         aBoard = new Piece[aRows][aColumns];
         this.rows = aRows;
@@ -96,8 +154,12 @@ class Board
         this.columnsChosen = new HashMap<>();
         createHashMaps(this.rows, this.columns);
         piecesArray = new Piece[this.rows * this.columns];
+        this.size = 0;
+        hasBingo = false;
+        id = anId;
         //Arrays.sort(piecesArray);
         //Arrays.binarySearch(piecesArray, )
+
     }
 
     private void createHashMaps(int rows, int columns)
@@ -105,29 +167,66 @@ class Board
         for (int i = 0; i < rows; i++)
         {
             String rowLocation = Integer.toString(i);
-            rowsChosen.put(rowLocation, 0);
+            rowsChosen.put(rowLocation, null);
         }
 
         for (int i = 0; i < columns; i++)
         {
             String columnLocation = Integer.toString(i);
-            columnsChosen.put(columnLocation, 0);
+            columnsChosen.put(columnLocation, null);
         }
+    }
+
+    public boolean isHasBingo()
+    {
+        return hasBingo;
     }
 
     public boolean insertPiece(int row, int column, int value)
     {
-        aBoard[row][column] = new Piece(row, column, value);
+        Piece aPiece = new Piece(row, column, value);
+        aBoard[row][column] = aPiece;
+        piecesArray[size] = aPiece;
 
+        size++;
         return true;
     }
 
-    public void selectPiece(int value)
+    public boolean selectPiece(int value)
     {
+        Piece pieceValue = new Piece(0, 0, value);
+        int result = Arrays.binarySearch(piecesArray, pieceValue);
 
+        if (result >= 0)
+        {
+            Piece actualPiece = piecesArray[result];
+            actualPiece.chosen = true;
+
+            Integer currentColumnValueForHashMap = columnsChosen.putIfAbsent(Integer.toString(actualPiece.y), 1);
+
+            if (currentColumnValueForHashMap != null)
+            {
+                columnsChosen.put(Integer.toString(actualPiece.y), currentColumnValueForHashMap + 1);
+                if (currentColumnValueForHashMap + 1 == columns)
+                {
+                    hasBingo = true;
+                }
+            }
+
+            Integer currentRowValueForHashMap = rowsChosen.putIfAbsent(Integer.toString(actualPiece.x), 1);
+
+            if (currentRowValueForHashMap != null)
+            {
+                rowsChosen.put(Integer.toString(actualPiece.x), currentRowValueForHashMap + 1);
+                if (currentRowValueForHashMap + 1 == rows)
+                {
+                    hasBingo = true;
+                }
+            }
+            return true;
+        }
+        return false;
     }
-
-
 }
 
 class Piece implements Comparable
@@ -159,8 +258,7 @@ class Piece implements Comparable
         } else if (this.value > ((Piece) o).value)
         {
             return 1;
-        }
-        else
+        } else
         {
             return -1;
         }
@@ -172,7 +270,7 @@ class Piece implements Comparable
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Piece piece = (Piece) o;
-        return  value == piece.value;
+        return value == piece.value;
     }
 
     @Override
