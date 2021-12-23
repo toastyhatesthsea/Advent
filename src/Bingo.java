@@ -56,7 +56,56 @@ public class Bingo implements Iterable
 
     }
 
-    public int parseBingoNumbers(File numbersFile) throws FileNotFoundException
+    /**
+     * Get the last board to win Bingo
+     * @param numbersFile File
+     * @return long
+     * @throws FileNotFoundException
+     */
+    public long getLastBingoBoard(File numbersFile) throws FileNotFoundException
+    {
+        if (someBoards.size() == 0)
+        {
+            throw new IllegalArgumentException("Must create boards to parse through Bingo numbers first");
+        }
+        Scanner boardScanner = new Scanner(numbersFile);
+        boardScanner.useDelimiter(",");
+        int totalBoards = someBoards.size();
+
+        while (boardScanner.hasNext())
+        {
+            String aValue = boardScanner.next();
+            //int aBingoValue = boardScanner.nextInt();
+            int aBingoValue = Integer.parseInt(aValue);
+            Iterator<Board> boardIterator = iterator();
+            boolean foundPiece = false;
+
+            while (boardIterator.hasNext())
+            {
+                Board aBoard = boardIterator.next();
+
+                if (!aBoard.hasBingo)
+                {
+                    aBoard.selectPiece(aBingoValue);
+
+                    if (aBoard.hasBingo)
+                    {
+                        totalBoards--;
+                    }
+                }
+                if (totalBoards == 0)
+                {
+                    long answer = aBoard.calculateUnchosenPieces(aBingoValue);
+                    return answer;
+                }
+            }
+
+            String mew = "";
+        }
+        return -1;
+    }
+
+    public long parseBingoNumbers(File numbersFile) throws FileNotFoundException
     {
         if (someBoards.size() == 0)
         {
@@ -79,7 +128,8 @@ public class Bingo implements Iterable
                 aBoard.selectPiece(aBingoValue);
                 if (aBoard.hasBingo)
                 {
-                    return aBoard.id;
+                    long answer = aBoard.calculateUnchosenPieces(aBingoValue);
+                    return answer;
                 }
             }
 
@@ -121,8 +171,10 @@ class BingoTesters
         //thatsABingo.createBoards(new File("bingo_small.txt"));
         thatsABingo.createBoards(new File("bingo_boards"));
 
-        int result = thatsABingo.parseBingoNumbers(new File("bingo_numbers.txt"));
+        //long result = thatsABingo.parseBingoNumbers(new File("bingo_numbers.txt"));
+        long anotherResult = thatsABingo.getLastBingoBoard(new File("bingo_numbers.txt"));
         Board aBoard = thatsABingo.someBoards.get(0);
+        int[][] bigIntArray = new int[1000][1000];
         //Piece somePiece = new Piece(0, 0, 1);
         //int result = Arrays.binarySearch(aBoard.piecesArray, somePiece);
         //int temp = 0;
@@ -160,6 +212,20 @@ class Board
         //Arrays.sort(piecesArray);
         //Arrays.binarySearch(piecesArray, )
 
+    }
+
+    public long calculateUnchosenPieces(int winningNumber)
+    {
+        long answer = 0;
+        for (Piece somePiece : piecesArray)
+        {
+            if (!somePiece.chosen)
+            {
+                answer += somePiece.value;
+            }
+        }
+        answer = answer * winningNumber;
+        return answer;
     }
 
     private void createHashMaps(int rows, int columns)
