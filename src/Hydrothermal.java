@@ -7,11 +7,10 @@ public class Hydrothermal
 
     HydroBoard aHydroBoard;
 
-    public Hydrothermal(int size)
+    public Hydrothermal(int size, int overlapMin)
     {
-        aHydroBoard = new HydroBoard(size);
+        aHydroBoard = new HydroBoard(size, overlapMin);
     }
-
 
 
     public void parseData(File aFile) throws FileNotFoundException
@@ -57,12 +56,50 @@ public class Hydrothermal
 
         if (x1Int == x2Int)
         {
-            if (y1Int < y2Int)
+            if (y1Int > y2Int)
             {
-                aHydroBoard.parseRow(x1Int, y1Int, y2Int);
+                int temp = y1Int;
+                y1Int = y2Int;
+                y2Int = temp;
             }
+            aHydroBoard.parseCol(x1Int, y1Int, x2Int, y2Int);
+        } else if (y1Int == y2Int)
+        {
+            if (x1Int > x2Int)
+            {
+                int temp = x1Int;
+                x1Int = x2Int;
+                x2Int = temp;
+            }
+            aHydroBoard.parseRow(x1Int, y1Int, x2Int, y2Int);
+        } else
+        {
+            if (x1Int < x2Int)
+            {
+                if (y1Int < y2Int)
+                {
+                    aHydroBoard.parseRightDownDiagnol(x1Int, y1Int, x2Int, y2Int);
+                }
+                else
+                {
+                    aHydroBoard.parseRightUpDiagnol(x1Int, y1Int, x2Int, y2Int);
+                }
+            }
+            else
+            {
+                if (y1Int < y2Int)
+                {
+                    aHydroBoard.parseLeftDownDiagnol(x1Int, y1Int, x2Int, y2Int);
+                }
+                else
+                {
+                    aHydroBoard.parseLeftUpDiagnol(x1Int, y1Int, x2Int, y2Int);
+                }
+            }
+            //aHydroBoard.parseDiagnol(y1Int, y2Int, x1Int, x2Int);
         }
     }
+
 
 }
 
@@ -70,10 +107,14 @@ public class Hydrothermal
 class HydroBoard
 {
     int[][] aBoard;
+    int overlapMin;
+    int numberOfOverlaps;
 
-    public HydroBoard(int size)
+    public HydroBoard(int size, int aOverlapMin)
     {
         aBoard = new int[size][size];
+        overlapMin = aOverlapMin;
+        numberOfOverlaps = 0;
     }
 
 
@@ -82,6 +123,10 @@ class HydroBoard
         try
         {
             int aValue = aBoard[row][column];
+            if (aValue + 1 == overlapMin)
+            {
+                numberOfOverlaps++;
+            }
             aBoard[row][column] = aValue + 1;
         } catch (Exception e)
         {
@@ -89,19 +134,70 @@ class HydroBoard
         }
     }
 
-    public void parseRow(int row, int begCol, int endCol)
+    public void parseRow(int x1, int y1, int x2, int y2)
     {
-        for (int i = begCol; i <= endCol; i++)
+        while (x1 <= x2)
         {
-            insertValue(row, i);
+            insertValue(y1, x1);
+            x1++;
         }
     }
 
-    public void parseCol(int col, int begRow, int endRow)
+    public void parseDiagnol(int begRow, int endRow, int begCol, int endCol)
     {
-        for (int i = begRow; i <= endRow; i++)
+        for (int i = begRow, j = begCol; i <= endRow || j <= endCol; i++, j++)
         {
-            insertValue(i, col);
+            insertValue(i, j);
+        }
+    }
+
+    public void parseRightDownDiagnol(int x1, int y1, int x2, int y2)
+    {
+        while (x1 <= x2)
+        {
+            insertValue(y1, x1);
+            x1++;
+            y1++;
+        }
+    }
+
+    public void parseLeftDownDiagnol(int x1, int y1, int x2, int y2)
+    {
+        while (x1 >= x2)
+        {
+            insertValue(y1, x1);
+            x1--;
+            y1++;
+        }
+    }
+
+    public void parseRightUpDiagnol(int x1, int y1, int x2, int y2)
+    {
+        while (y1 >= y2)
+        {
+
+            insertValue(y1, x1);
+            y1--;
+            x1++;
+        }
+    }
+
+    public void parseLeftUpDiagnol(int x1, int y1, int x2, int y2)
+    {
+        while (y1 >= y2)
+        {
+            insertValue(y1, x1);
+            y1--;
+            x1--;
+        }
+    }
+
+    public void parseCol(int x1, int y1, int x2, int y2)
+    {
+        while (y1 <= y2)
+        {
+            insertValue(y1, x1);
+            y1++;
         }
     }
 }
@@ -111,7 +207,7 @@ class HydroTesters
 {
     public static void main(String[] asdasdasdsad) throws FileNotFoundException
     {
-        Hydrothermal hydro = new Hydrothermal(1000);
+        Hydrothermal hydro = new Hydrothermal(1000, 2);
         hydro.parseData(new File("hydro_large"));
 
     }
